@@ -1,40 +1,43 @@
 <template>
-    <div class="z-20 relative" v-if="layouts">
-        <div class="relative" v-if="layouts.length > 1">
-            <div v-if="isLayoutsDropdownOpen"
-                 class="absolute rounded-lg shadow-lg max-w-full mb-3 pin-b max-h-search overflow-y-auto border border-40"
-            >
-                <div>
-                    <ul class="list-reset">
-                        <li v-for="layout in layouts" class="border-b border-40">
-                            <a
-                                :dusk="'add-' + layout.name"
-                                @click="addGroup(layout)"
-                                class="cursor-pointer flex items-center hover:bg-30 block py-2 px-3 no-underline font-normal bg-20">
-                                <div><p class="text-90">{{ layout.title }}</p></div>
-                            </a>
-                        </li>
-                    </ul>
+    <div class="flex flex-col items-end justify-end" v-if="layouts">
+        <div class="flex flex-col items-stretch">
+            <div class="relative">
+                <div v-if="layouts.length > 1 && isLayoutsDropdownOpen"
+                     class="z-20 absolute rounded-lg shadow-lg max-w-full mb-3 pin-b max-h-search overflow-y-auto border border-40"
+                >
+                    <div>
+                        <ul class="list-reset">
+                            <li v-for="layout in layouts" :key="layout.name" class="border-b border-40">
+                                <a
+                                    :dusk="'add-' + layout.name"
+                                    @click="addGroup(layout)"
+                                    class="cursor-pointer flex items-center hover:bg-30 block py-2 px-3 no-underline font-normal bg-20">
+                                    <div><p class="text-90">{{ layout.title }}</p></div>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
+            <button
+                dusk="toggle-layouts-dropdown-or-add-default"
+                type="button"
+                tabindex="0"
+                class="btn btn-default btn-primary inline-flex items-center relative"
+                @click="toggleLayoutsDropdownOrAddDefault"
+                v-if="this.limitCounter != 0"
+            >
+                <span>{{ field.button }}</span>
+            </button>
         </div>
-        <button
-            dusk="toggle-layouts-dropdown-or-add-default"
-            type="button"
-            tabindex="0"
-            class="btn btn-default btn-primary inline-flex items-center relative"
-            @click="toggleLayoutsDropdownOrAddDefault"
-            v-if="this.limitCounter > 0"
-        >
-            <span>{{ field.button }}</span>
-        </button>
     </div>
 </template>
 
 <script>
+    import { eventBus } from '../eventbus';
 
     export default {
-        props: ['layouts', 'field', 'resourceName', 'resourceId', 'resource', 'errors', 'limitCounter'],
+        props: ['layouts', 'field', 'resourceName', 'resourceId', 'resource', 'errors', 'limitCounter', 'index'],
 
         data() {
             return {
@@ -56,12 +59,12 @@
             },
 
             /**
-             * Append the given layout to flexible content's list
+             * Add the given layout to flexible content's list
              */
             addGroup(layout) {
                 if (!layout) return;
 
-                this.$emit('addGroup', layout);
+                eventBus.$emit('add-group-'+this.field.attribute, layout, this.index);
 
                 this.isLayoutsDropdownOpen = false;
             },

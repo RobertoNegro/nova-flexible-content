@@ -1,7 +1,7 @@
 <template>
-    <div class="w-3/5" v-if="layouts">
+    <div class="w-full" v-if="layouts">
 
-        <div v-if="this.limitCounter > 0">
+        <div v-if="this.limitCounter != 0">
             <div v-if="layouts.length === 1">
                 <button
                     dusk="toggle-layouts-dropdown-or-add-default"
@@ -33,12 +33,13 @@
 
 <script>
 
-    import Multiselect from 'vue-multiselect'
+    import Multiselect from 'vue-multiselect';
+    import { eventBus } from '../eventbus';
 
     export default {
         components: {Multiselect},
 
-        props: ['layouts', 'field', 'resourceName', 'resourceId', 'resource', 'errors', 'limitCounter'],
+        props: ['layouts', 'field', 'resourceName', 'resourceId', 'resource', 'errors', 'limitCounter', 'index'],
 
         data() {
             return {
@@ -82,7 +83,7 @@
             addGroup(layout) {
                 if (!layout) return;
 
-                this.$emit('addGroup', layout);
+                eventBus.$emit('add-group-'+this.field.attribute, layout, this.index);
 
                 this.isLayoutsDropdownOpen = false;
                 this.selectedLayout = null;

@@ -12,25 +12,28 @@
                 <div class="w-full">
                     <div v-if="columns.length > 0" class="w-full flex flex-row justify-between items-center">
                         <div class="text-90 text-lg font-bold">{{ __('Bozze') }}:</div>
-                        <div class="text-80 text-sm font-light">{{ __('Sposta i componenti dentro ad una colonna per inserirli nella pagina') }}</div>
+                        <div class="text-80 text-sm font-light">
+                            {{ __('Sposta i componenti dentro ad una colonna per inserirli nella pagina') }}
+                        </div>
                     </div>
-                    <div class="w-full p-1" v-for="(group, index) in drafts">
-                        <div :class="columns.length > 0 ? 'border-4 border-dotted' : 'border'" class="w-full bg-white shadow rounded-lg border-50 p-2">
+                    <div class="w-full p-1" v-for="(draft, index) in drafts">
+                        <div :class="columns.length > 0 ? 'border-4 border-dotted' : 'border'"
+                             class="w-full bg-white shadow rounded-lg border-50 p-2">
                             <form-nova-flexible-content-group
-                                :dusk="field.attribute + '-' + index"
-                                :key="group.key"
+                                :dusk="field.attribute + '-' + draft.index"
+                                :key="draft.group.key"
                                 :field="{...field, confirmRemove: true, confirmRemoveNo: 'Annulla', confirmRemoveYes: 'Elimina', confirmRemoveTitle: 'Elimina colonna', confirmRemoveMessage: 'Proseguendo verrà eliminata la colonna e il suo intero contenuto. L\'operazione è irreversibile. Sei sicuro di voler procedere?'}"
-                                :group="{...group, collapsed: false}"
-                                :index="index"
+                                :group="{...draft.group, collapsed: false}"
+                                :index="draft.index"
                                 :resource-name="resourceName"
                                 :resource-id="resourceId"
                                 :resource="resource"
                                 :errors="errors"
                                 :is-column="true"
                                 :compact="false"
-                                @move-up="moveUp(group.key)"
-                                @move-down="moveDown(group.key)"
-                                @remove="remove(group.key)"
+                                @move-up="moveUp(draft.group.key)"
+                                @move-down="moveDown(draft.group.key)"
+                                @remove="remove(draft.group.key)"
                             />
                         </div>
                     </div>
@@ -74,17 +77,19 @@
                             @move-down="moveDown(group.key)"
                             @remove="remove(group.key)"
                         />
-                        <component
-                            :layouts="layouts"
-                            :is="field.menu.component"
-                            :field="field"
-                            :limit-counter="limitCounter"
-                            :errors="errors"
-                            :resource-name="resourceName"
-                            :resource-id="resourceId"
-                            :resource="resource"
-                            :index="column.index + column.subgroups.length + 1"
-                        />
+                        <div v-if="column.allowChildrens">
+                            <component
+                                :layouts="layouts"
+                                :is="field.menu.component"
+                                :field="field"
+                                :limit-counter="limitCounter"
+                                :errors="errors"
+                                :resource-name="resourceName"
+                                :resource-id="resourceId"
+                                :resource="resource"
+                                :index="column.index + column.subgroups.length + 1"
+                            />
+                        </div>
                     </div>
 
                 </div>
@@ -145,8 +150,29 @@ export default {
                 if (this.isColumn(g.name)) {
                     return false;
                 } else {
-                    res.push(g);
+                    res.push({
+                        group: g,
+                        index: i,
+                    });
                     return true;
+                }
+            });
+
+            let hasToCheck = false;
+            this.orderedGroups.forEach((g, i) => {
+                if (this.isSpecialChildless(g.name)) {
+                    hasToCheck = true;
+                } else {
+                    if (hasToCheck) {
+                        if (!this.isColumn(g.name)) {
+                            res.push({
+                                group: g,
+                                index: i,
+                            });
+                        } else {
+                            hasToCheck = false;
+                        }
+                    }
                 }
             });
             return res;
@@ -165,7 +191,12 @@ export default {
                         width: this.getColumnWidth(g),
                         subgroups: [],
                         index: i,
+                        allowChildrens: true
                     };
+                    if (this.isSpecialChildless(g.name)) {
+                        res.push({...col, allowChildrens: false});
+                        col = null;
+                    }
                 } else {
                     if (col) {
                         col.subgroups.push(g);
@@ -303,7 +334,11 @@ export default {
         },
 
         isColumn(name) {
-            return ['x_column'].includes(name);
+            return ['x_column'].includes(name) || this.isSpecialChildless(name);
+        },
+
+        isSpecialChildless(name) {
+            return ['x_banner'].includes(name);
         },
 
         getColumnWidth(group) {
@@ -330,8 +365,21 @@ export default {
             if (index <= 0 || (columnIndex !== undefined && columnIndex <= 0)) return;
 
             const amount = columnIndex !== undefined ? this.columns[columnIndex].subgroups.length + 1 : 1;
-            const shift = columnIndex !== undefined ? this.columns[columnIndex - 1].subgroups.length + 1 : 1;
-
+            let shift = columnIndex !== undefined ? this.columns[columnIndex - 1].subgroups.length + 1 : 1;
+            if(columnIndex === undefined) {
+                let found = false;
+                for(let i = index-2; i >= 0; i--) {
+                    if(this.isSpecialChildless(this.groups[this.order[i]].name)) {
+                        shift += 1;
+                    } else {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) {
+                    return;
+                }
+            }
             this.order.splice(index - shift, 0, ...this.order.splice(index, amount));
         },
 
@@ -344,8 +392,21 @@ export default {
             if (index < 0 || index >= this.order.length - 1 || columnIndex >= this.columns.length - 1) return;
 
             const amount = columnIndex !== undefined ? this.columns[columnIndex].subgroups.length + 1 : 1;
-            const shift = columnIndex !== undefined ? this.columns[columnIndex + 1].subgroups.length + 1 : 1;
-
+            let shift = columnIndex !== undefined ? this.columns[columnIndex + 1].subgroups.length + 1 : 1;
+            if(columnIndex === undefined) {
+                let found = false;
+                for(let i = index + 1; i < this.order.length; i--) {
+                    if(this.isSpecialChildless(this.groups[this.order[i]].name)) {
+                        shift += 1;
+                    } else {
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found) {
+                    return;
+                }
+            }
             this.order.splice(index + shift, 0, ...this.order.splice(index, amount));
         },
 

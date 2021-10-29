@@ -82,7 +82,7 @@
                         :field="item"
                         :errors="errors"
                         :show-help-text="item.helpText != null"
-                        :class="'full-width-fields ' + ((isColumn || index == group.fields.length - 1) ? 'remove-bottom-border ' : '') + (isColumn ? 'fields-no-pad ' : '')"
+                        :class="'full-width-fields ' + ((compact || index == group.fields.length - 1) ? 'remove-bottom-border ' : '') + (compact ? 'fields-no-pad ' : '')"
                     />
                 </div>
             </div>
@@ -96,7 +96,7 @@ import {BehavesAsPanel} from 'laravel-nova';
 export default {
     mixins: [BehavesAsPanel],
 
-    props: ['errors', 'group', 'index', 'field', 'isColumn'],
+    props: ['errors', 'group', 'index', 'field', 'isColumn', 'compact'],
 
     data() {
         return {

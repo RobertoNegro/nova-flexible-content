@@ -6,12 +6,42 @@
         :errors="errors"
         full-width-content>
         <template slot="field">
-            <!--                style="display: grid;grid-template-columns: repeat(12, minmax(0, 1fr));gap: 0.25rem;"-->
+            <div
+                class="flex flex-row flex-wrap items-start justify-center bg-40 mb-2 p-2 rounded-lg"
+                v-if="drafts.length > 0">
+                <div class="w-full">
+                    <div v-if="columns.length > 0" class="w-full flex flex-row justify-between items-center">
+                        <div class="text-90 text-lg font-bold">{{ __('Bozze') }}:</div>
+                        <div class="text-80 text-sm font-light">{{ __('Sposta i componenti dentro ad una colonna per inserirli nella pagina') }}</div>
+                    </div>
+                    <div class="w-full p-1" v-for="(group, index) in drafts">
+                        <div :class="columns.length > 0 ? 'border-4 border-dotted' : 'border'" class="w-full bg-white shadow rounded-lg border-50 p-2">
+                            <form-nova-flexible-content-group
+                                :dusk="field.attribute + '-' + index"
+                                :key="group.key"
+                                :field="{...field, confirmRemove: true, confirmRemoveNo: 'Annulla', confirmRemoveYes: 'Elimina', confirmRemoveTitle: 'Elimina colonna', confirmRemoveMessage: 'Proseguendo verrà eliminata la colonna e il suo intero contenuto. L\'operazione è irreversibile. Sei sicuro di voler procedere?'}"
+                                :group="{...group, collapsed: false}"
+                                :index="index"
+                                :resource-name="resourceName"
+                                :resource-id="resourceId"
+                                :resource="resource"
+                                :errors="errors"
+                                :is-column="true"
+                                :compact="false"
+                                @move-up="moveUp(group.key)"
+                                @move-down="moveDown(group.key)"
+                                @remove="remove(group.key)"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div
                 class="flex flex-row flex-wrap items-start justify-center bg-40 p-2 mb-2 rounded-lg"
-                v-if="order.length > 0">
+                v-if="columns.length > 0">
                 <div :class="column.width + ' full-on-mobile p-1'" v-for="(column, columnIndex) in columns">
-                    <div class="w-full bg-white shadow rounded-lg p-2">
+                    <div class="w-full bg-white shadow rounded-lg border border-50 p-2">
                         <form-nova-flexible-content-group
                             :dusk="field.attribute + '-' + column.index"
                             :key="column.group.key"
@@ -23,6 +53,7 @@
                             :resource="resource"
                             :errors="errors"
                             :is-column="true"
+                            :compact="true"
                             @move-up="moveUp(column.group.key, columnIndex)"
                             @move-down="moveDown(column.group.key, columnIndex)"
                             @remove="remove(column.group.key, columnIndex)"
@@ -108,6 +139,18 @@ export default {
                 return {...g, width};
             });
         },
+        drafts() {
+            const res = [];
+            this.orderedGroups.every((g, i) => {
+                if (this.isColumn(g.name)) {
+                    return false;
+                } else {
+                    res.push(g);
+                    return true;
+                }
+            });
+            return res;
+        },
         columns() {
             let width = 'grid-column: span 12 / span 12;';
             const res = [];
@@ -132,10 +175,6 @@ export default {
             if (col) {
                 res.push(col);
             }
-            console.log(this.order);
-            console.log(this.groups);
-            console.log(this.orderedGroups);
-            console.log(res);
             return res;
         }
     },
@@ -264,18 +303,22 @@ export default {
         },
 
         isColumn(name) {
-            return name === 'x_column';
+            return ['x_column'].includes(name);
         },
 
         getColumnWidth(group) {
             if (!this.isColumn(group.name)) {
                 return false;
             }
-            const widthField = group.fields.find(f => f.sortableUriKey === 'x_width');
-            if (!widthField) {
-                return false;
+            if (group.name === 'x_column') {
+                const widthField = group.fields.find(f => f.sortableUriKey === 'x_width');
+                if (!widthField) {
+                    return false;
+                }
+                return widthField.value;
+            } else {
+                return 'w-full';
             }
-            return widthField.value;
         },
 
         /**
@@ -336,7 +379,7 @@ export default {
 
 <style>
 @media only screen and (max-width: 1400px) {
-    .full-on-mobile  {
+    .full-on-mobile {
         width: 100% !important;
     }
 }

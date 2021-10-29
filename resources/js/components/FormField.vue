@@ -10,22 +10,22 @@
             <div
                 class="flex flex-row flex-wrap items-start justify-center bg-40 p-2 mb-2 rounded-lg"
                 v-if="order.length > 0">
-                <div :class="column.width + ' p-1'" v-for="column in columns">
+                <div :class="column.width + ' full-on-mobile p-1'" v-for="(column, columnIndex) in columns">
                     <div class="w-full bg-white shadow rounded-lg p-2">
                         <form-nova-flexible-content-group
                             :dusk="field.attribute + '-' + column.index"
                             :key="column.group.key"
                             :field="{...field, confirmRemove: true, confirmRemoveNo: 'Annulla', confirmRemoveYes: 'Elimina', confirmRemoveTitle: 'Elimina colonna', confirmRemoveMessage: 'Proseguendo verrà eliminata la colonna e il suo intero contenuto. L\'operazione è irreversibile. Sei sicuro di voler procedere?'}"
-                            :group="column.group"
+                            :group="{...column.group, collapsed: false}"
                             :index="column.index"
                             :resource-name="resourceName"
                             :resource-id="resourceId"
                             :resource="resource"
                             :errors="errors"
-                            :layouts="layouts"
-                            @move-up="moveUp(column.group.key, column.subgroups.length)"
-                            @move-down="moveDown(column.group.key, column.subgroups.length)"
-                            @remove="remove(column.group.key, column.subgroups.length)"
+                            :is-column="true"
+                            @move-up="moveUp(column.group.key, columnIndex)"
+                            @move-down="moveDown(column.group.key, columnIndex)"
+                            @remove="remove(column.group.key, columnIndex)"
                         />
                         <form-nova-flexible-content-group
                             v-for="(group, index) in column.subgroups"
@@ -38,6 +38,7 @@
                             :resource-id="resourceId"
                             :resource="resource"
                             :errors="errors"
+                            :is-column="false"
                             @move-up="moveUp(group.key)"
                             @move-down="moveDown(group.key)"
                             @remove="remove(group.key)"
@@ -80,7 +81,7 @@
 import FullWidthField from './FullWidthField';
 import {FormField, HandlesValidationErrors} from 'laravel-nova';
 import Group from '../group';
-import { eventBus } from '../eventbus';
+import {eventBus} from '../eventbus';
 
 export default {
     mixins: [FormField, HandlesValidationErrors],
@@ -94,7 +95,6 @@ export default {
             return this.field.layouts || false
         },
         orderedGroups() {
-            console.log(this.order);
             return this.order.reduce((groups, key) => {
                 groups.push(this.groups[key]);
                 return groups;
@@ -132,6 +132,9 @@ export default {
             if (col) {
                 res.push(col);
             }
+            console.log(this.order);
+            console.log(this.groups);
+            console.log(this.orderedGroups);
             console.log(res);
             return res;
         }
@@ -278,56 +281,63 @@ export default {
         /**
          * Move a group up
          */
-        moveUp(key, amount) {
+        moveUp(key, columnIndex) {
             let index = this.order.indexOf(key);
 
-            if (index <= 0) return;
+            if (index <= 0 || (columnIndex !== undefined && columnIndex <= 0)) return;
 
-            this.order.splice(index - 1, 0, ...this.order.splice(index, 1 + (amount != null ? amount : 0)));
+            const amount = columnIndex !== undefined ? this.columns[columnIndex].subgroups.length + 1 : 1;
+            const shift = columnIndex !== undefined ? this.columns[columnIndex - 1].subgroups.length + 1 : 1;
+
+            this.order.splice(index - shift, 0, ...this.order.splice(index, amount));
         },
 
         /**
          * Move a group down
          */
-        moveDown(key, amount) {
+        moveDown(key, columnIndex) {
             let index = this.order.indexOf(key);
 
-            if (index < 0 || index >= this.order.length - 1) return;
+            if (index < 0 || index >= this.order.length - 1 || columnIndex >= this.columns.length - 1) return;
 
-            this.order.splice(index + 1, 0, ...this.order.splice(index, 1 + (amount != null ? amount : 0)));
+            const amount = columnIndex !== undefined ? this.columns[columnIndex].subgroups.length + 1 : 1;
+            const shift = columnIndex !== undefined ? this.columns[columnIndex + 1].subgroups.length + 1 : 1;
+
+            this.order.splice(index + shift, 0, ...this.order.splice(index, amount));
         },
 
         /**
          * Remove a group
          */
-        remove(key, amount) {
+        remove(key, columnIndex) {
             let index = this.order.indexOf(key);
 
             if (index < 0) return;
 
-            this.order.splice(index, 1);
-            delete this.groups[key];
+            const amount = columnIndex !== undefined ? this.columns[columnIndex].subgroups.length + 1 : 1;
+
+            const keys = this.order.splice(index, amount);
+            keys.forEach(k => {
+                delete this.groups[k];
+            })
 
             if (this.limitCounter >= 0) {
-                this.limitCounter++;
-            }
-
-            if (amount) {
-                for (let i = 0; i < amount; i++) {
-                    this.order.splice(index, 1);
-                    delete this.groups[key];
-
-                    if (this.limitCounter >= 0) {
-                        this.limitCounter++;
-                    }
-                }
+                this.limitCounter += amount;
             }
         }
     },
     mounted() {
-        eventBus.$on('add-group-'+this.field.attribute, (layout, position) => {
+        eventBus.$on('add-group-' + this.field.attribute, (layout, position) => {
             this.addGroup(layout, position);
         });
     }
 }
 </script>
+
+<style>
+@media only screen and (max-width: 1400px) {
+    .full-on-mobile  {
+        width: 100% !important;
+    }
+}
+</style>

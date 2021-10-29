@@ -1,8 +1,8 @@
 <template>
-    <div>
-        <div class="relative flex bg-white mb-4 pb-1"
+    <div :class="{'-m-2 pb-2': isColumn}">
+        <div :class="'overflow-x-auto relative flex mb-4 pb-2 ' + (isColumn ? 'border-b border-40' : '') "
              :id="group.key">
-            <div class="z-10 bg-white border-t border-l border-b border-60 h-auto pin-l pin-t rounded-l self-start w-8">
+            <div :class="(isColumn ? 'border-40 border-b rounded-br-lg' : 'border-b border-t border-l border-60 rounded-l bg-white') + ' z-10 h-auto pin-l pin-t self-start w-8'">
                 <button
                     dusk="expand-group"
                     type="button"
@@ -14,6 +14,7 @@
                 </button>
                 <div v-if="!collapsed">
                     <button
+                        v-if="!isColumn"
                         dusk="collapse-group"
                         type="button"
                         class="group-control btn border-r border-40 w-8 h-8 block"
@@ -25,7 +26,7 @@
                         <button
                             dusk="move-up-group"
                             type="button"
-                            class="group-control btn border-t border-r border-40 w-8 h-8 block"
+                            :class="(isColumn ? '' : 'border-t') +' group-control btn border-r border-40 w-8 h-8 block'"
                             :title="__('Move up')"
                             @click.prevent="moveUp">
                             <icon type="arrow-up" view-box="0 0 8 4.8" width="10" height="10"/>
@@ -41,7 +42,7 @@
                         <button
                             dusk="delete-group"
                             type="button"
-                            class="group-control btn border-t border-r border-40 w-8 h-8 block"
+                            :class="(isColumn ? 'rounded-br-lg' : '') + ' group-control btn border-t border-r border-40 w-8 h-8 block'"
                             :title="__('Delete')"
                             @click.prevent="confirmRemove">
                             <icon type="delete" view-box="0 0 20 20" width="16" height="16"/>
@@ -60,10 +61,10 @@
                     </div>
                 </div>
             </div>
-            <div class="-mb-1 flex flex-col min-h-full w-full">
+            <div :style="(!isColumn && !collapsed) ? 'min-width: 400px; margin-right:1px' : ''" class="-mb-1 flex flex-col min-h-full w-full">
                 <div :class="titleStyle" v-if="group.title">
                     <div class="leading-normal py-1 px-8"
-                         :class="{'border-b border-40': !collapsed}">
+                         :class="{'border-b border-40': !collapsed && !isColumn}">
                         <p class="text-80">
                             <span class="mr-4 font-semibold">#{{ index + 1 }}</span>
                             {{ group.title }}
@@ -81,7 +82,7 @@
                         :field="item"
                         :errors="errors"
                         :show-help-text="item.helpText != null"
-                        :class="{ 'remove-bottom-border': index == group.fields.length - 1 }"
+                        :class="'full-width-fields ' + ((isColumn || index == group.fields.length - 1) ? 'remove-bottom-border ' : '') + (isColumn ? 'fields-no-pad ' : '')"
                     />
                 </div>
             </div>
@@ -95,7 +96,7 @@ import {BehavesAsPanel} from 'laravel-nova';
 export default {
     mixins: [BehavesAsPanel],
 
-    props: ['errors', 'group', 'index', 'field', 'layouts'],
+    props: ['errors', 'group', 'index', 'field', 'isColumn'],
 
     data() {
         return {
@@ -107,16 +108,32 @@ export default {
 
     computed: {
         titleStyle() {
-            let classes = ['border-t', 'border-r', 'border-60', 'rounded-tr-lg'];
+            let classes = [ 'border-60', 'rounded-tr-lg'];
+            if(!this.isColumn) {
+                classes.push('bg-white');
+                classes.push('border-t');
+                classes.push('border-r');
+            }
             if (this.collapsed) {
-                classes.push('border-b rounded-br-lg');
+                if(!this.isColumn) {
+                    classes.push('border-b');
+                }
+                classes.push('rounded-br-lg');
             }
             return classes;
         },
         containerStyle() {
-            let classes = ['flex-grow', 'border-b', 'border-r', 'border-l', 'border-60', 'rounded-b-lg'];
+            let classes = ['flex-grow', 'border-60', 'rounded-b-lg'];
+            if(!this.isColumn) {
+                classes.push('bg-white');
+                classes.push('border-b');
+                classes.push('border-r');
+                classes.push('border-l');
+            }
             if (!this.group.title) {
-                classes.push('border-t');
+                if(!this.isColumn) {
+                    classes.push('border-t');
+                }
                 classes.push('rounded-tr-lg');
             }
             if (this.collapsed) {
@@ -184,6 +201,14 @@ export default {
 </script>
 
 <style>
+.fields-no-pad div.py-6{
+    padding-top: 0 !important;
+    padding-bottom: 0.5rem !important;
+}
+.full-width-fields div.w-1\/2 {
+    width: 100% !important;
+}
+
 .group-control:focus {
     outline: none;
 }

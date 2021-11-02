@@ -40,6 +40,15 @@
                             <icon type="arrow-down" view-box="0 0 8 4.8" width="10" height="10"/>
                         </button>
                         <button
+                            v-if="!isColumn && !isDraft"
+                            dusk="draft-group"
+                            type="button"
+                            class="group-control btn border-t border-r border-40 w-8 h-8 block"
+                            :title="__('Draft')"
+                            @click.prevent="draftGroup">
+                          <icon type="edit" view-box="0 0 20 20" width="16" height="16"/>
+                        </button>
+                        <button
                             dusk="delete-group"
                             type="button"
                             :class="(isColumn ? 'rounded-br-lg' : '') + ' group-control btn border-t border-r border-40 w-8 h-8 block'"
@@ -96,7 +105,7 @@ import {BehavesAsPanel} from 'laravel-nova';
 export default {
     mixins: [BehavesAsPanel],
 
-    props: ['errors', 'group', 'index', 'field', 'isColumn', 'compact'],
+    props: ['errors', 'group', 'index', 'field', 'isColumn', 'isDraft', 'compact'],
 
     data() {
         return {
@@ -156,6 +165,13 @@ export default {
          */
         moveDown() {
             this.$emit('move-down');
+        },
+
+        /**
+         * Move to draft
+         */
+        draftGroup() {
+            this.$emit('draft-group');
         },
 
         /**

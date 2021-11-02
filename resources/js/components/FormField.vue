@@ -30,9 +30,11 @@
                                 :resource="resource"
                                 :errors="errors"
                                 :is-column="true"
+                                :is-draft="true"
                                 :compact="false"
                                 @move-up="moveUp(draft.group.key)"
                                 @move-down="moveDown(draft.group.key)"
+                                @draft-group="draftGroup(draft.group.key)"
                                 @remove="remove(draft.group.key)"
                             />
                         </div>
@@ -56,9 +58,11 @@
                             :resource="resource"
                             :errors="errors"
                             :is-column="true"
+                            :is-draft="false"
                             :compact="true"
                             @move-up="moveUp(column.group.key, columnIndex)"
                             @move-down="moveDown(column.group.key, columnIndex)"
+                            @draft-group="draftGroup(column.group.key)"
                             @remove="remove(column.group.key, columnIndex)"
                         />
                         <form-nova-flexible-content-group
@@ -75,6 +79,7 @@
                             :is-column="false"
                             @move-up="moveUp(group.key)"
                             @move-down="moveDown(group.key)"
+                            @draft-group="draftGroup(group.key)"
                             @remove="remove(group.key)"
                         />
                         <div v-if="column.allowChildrens">
@@ -137,12 +142,13 @@ export default {
             }, []);
         },
         groupsWithColumns() {
-            let width = 'grid-column: span 12 / span 12;';
-            return this.orderedGroups.map((g, k) => {
+            let width = 'w-full';
+            const res = this.orderedGroups.map((g, k) => {
                 const newWidth = this.getColumnWidth(g);
                 width = newWidth ? newWidth : width;
                 return {...g, width};
             });
+            return res;
         },
         drafts() {
             const res = [];
@@ -178,7 +184,6 @@ export default {
             return res;
         },
         columns() {
-            let width = 'grid-column: span 12 / span 12;';
             const res = [];
             let col = null;
             this.orderedGroups.forEach((g, i) => {
@@ -350,7 +355,14 @@ export default {
                 if (!widthField) {
                     return false;
                 }
-                return widthField.value;
+                switch (widthField.value) {
+                  case '25': return 'w-1/4';
+                  case '33': return 'w-1/3';
+                  case '50': return 'w-1/2';
+                  case '66': return 'w-2/3';
+                  case '75': return 'w-3/4';
+                  default: return 'w-full';
+                }
             } else {
                 return 'w-full';
             }
@@ -395,7 +407,7 @@ export default {
             let shift = columnIndex !== undefined ? this.columns[columnIndex + 1].subgroups.length + 1 : 1;
             if(columnIndex === undefined) {
                 let found = false;
-                for(let i = index + 1; i < this.order.length; i--) {
+                for(let i = index + 1; i < this.order.length; i++) {
                     if(this.isSpecialChildless(this.groups[this.order[i]].name)) {
                         shift += 1;
                     } else {
@@ -428,7 +440,15 @@ export default {
             if (this.limitCounter >= 0) {
                 this.limitCounter += amount;
             }
-        }
+        },
+
+        /**
+         * Move group to drafts
+         */
+        draftGroup(key) {
+          let index = this.order.indexOf(key);
+          this.order.splice(0, 0, ...this.order.splice(index, 1));
+        },
     },
     mounted() {
         eventBus.$on('add-group-' + this.field.attribute, (layout, position) => {

@@ -6,18 +6,16 @@
             class="bg-white rounded-lg shadow-lg overflow-hidden"
             style="width: 460px"
         >
-            <slot>
-                <div class="p-8">
-                    <heading :level="2" class="mb-6" v-if="title">{{ title }}</heading>
-                    <heading :level="2" class="mb-6" v-else>{{ __('Delete Group') }}</heading>
-                    <p class="text-80 leading-normal" v-if="message">
-                        {{ message }}
-                    </p>
-                    <p class="text-80 leading-normal" v-else>
-                        {{ __('Are you sure you want to delete this group?') }}
-                    </p>
-                </div>
-            </slot>
+            <div class="p-8">
+                <heading :level="2" class="mb-6" v-if="title">{{ title }}</heading>
+                <heading :level="2" class="mb-6" v-else>{{ __('Delete Group') }}</heading>
+                <p class="text-80 leading-normal" v-if="message">
+                    {{ message }}
+                </p>
+                <p class="text-80 leading-normal" v-else>
+                    {{ __('Are you sure you want to delete this group?') }}
+                </p>
+            </div>
 
             <div class="bg-30 px-6 py-3 flex">
                 <div class="ml-auto">
@@ -64,7 +62,7 @@ export default {
      * Mount the component.
      */
     mounted() {
-        this.$refs.confirmButton.focus()
+        this.$refs.confirmButton?.focus()
     },
 }
 </script>

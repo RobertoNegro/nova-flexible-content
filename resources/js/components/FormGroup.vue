@@ -6,7 +6,7 @@
                 <button
                     dusk="expand-group"
                     type="button"
-                    class="group-control btn border-r border-40 w-8 h-8 block"
+                    :class="(isColumn ? 'rounded-br-lg' : '') + ' group-control btn border-r border-40 w-8 h-8 block'"
                     :title="__('Expand')"
                     @click.prevent="expand"
                     v-if="collapsed">
@@ -14,7 +14,6 @@
                 </button>
                 <div v-if="!collapsed">
                     <button
-                        v-if="!isColumn"
                         dusk="collapse-group"
                         type="button"
                         class="group-control btn border-r border-40 w-8 h-8 block"
@@ -26,7 +25,7 @@
                         <button
                             dusk="move-up-group"
                             type="button"
-                            :class="(isColumn ? '' : 'border-t') +' group-control btn border-r border-40 w-8 h-8 block'"
+                            class="border-t group-control btn border-r border-40 w-8 h-8 block"
                             :title="__('Move up')"
                             @click.prevent="moveUp">
                             <icon type="arrow-up" view-box="0 0 8 4.8" width="10" height="10"/>
@@ -40,7 +39,7 @@
                             <icon type="arrow-down" view-box="0 0 8 4.8" width="10" height="10"/>
                         </button>
                         <button
-                            v-if="!isColumn && !isDraft"
+                            v-if="false"
                             dusk="draft-group"
                             type="button"
                             class="group-control btn border-t border-r border-40 w-8 h-8 block"
@@ -74,9 +73,12 @@
                 <div :class="titleStyle" v-if="group.title">
                     <div class="leading-normal py-1 px-8"
                          :class="{'border-b border-40': !collapsed && !isColumn}">
-                        <p class="text-80">
-                            <span class="mr-4 font-semibold">#{{ index + 1 }}</span>
-                            {{ group.title }}
+                        <p class="text-80 flex flex-row items-center justify-center">
+                            <span class="flex-1">{{ group.title }}</span>
+                            <span v-if="width && isColumn" class="ml-4 font-light text-70 text-sm">{{width}}%</span>
+                            <span class="inline-block rounded-full px-2 ml-4 text-90 font-light text-sm" :style="'background-color: ' + color">
+                              {{ index + 1 }}
+                            </span>
                         </p>
                     </div>
                 </div>
@@ -105,7 +107,7 @@ import {BehavesAsPanel} from 'laravel-nova';
 export default {
     mixins: [BehavesAsPanel],
 
-    props: ['errors', 'group', 'index', 'field', 'isColumn', 'isDraft', 'compact'],
+    props: ['errors', 'group', 'index', 'field', 'isColumn', 'isDraft', 'compact', 'width', 'color'],
 
     data() {
         return {

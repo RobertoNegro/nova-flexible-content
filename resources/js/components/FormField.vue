@@ -32,6 +32,8 @@
                                 :is-column="true"
                                 :is-draft="true"
                                 :compact="false"
+                                :width="draft.width"
+                                :color="draft.color"
                                 @move-up="moveUp(draft.group.key)"
                                 @move-down="moveDown(draft.group.key)"
                                 @draft-group="draftGroup(draft.group.key)"
@@ -43,15 +45,16 @@
             </div>
 
             <div
-                class="flex flex-row flex-wrap items-start justify-center bg-40 p-2 mb-2 rounded-lg"
-                v-if="columns.length > 0">
-                <div :class="column.width + ' full-on-mobile p-1'" v-for="(column, columnIndex) in columns">
+                :class="'flex flex-row flex-wrap items-start justify-center p-2 mb-2 rounded-lg ' + (rowIndex % 2 === 0 ? 'bg-60' : 'bg-40')"
+                v-for="(row, rowIndex) in rows"
+                v-if="rows.length > 0">
+                <div :class="mapWidthToCssClass(column.width) + ' full-on-mobile p-1'" v-for="(column, columnIndex) in row.columns">
                     <div class="w-full bg-white shadow rounded-lg border border-50 p-2">
                         <form-nova-flexible-content-group
                             :dusk="field.attribute + '-' + column.index"
                             :key="column.group.key"
                             :field="{...field, confirmRemove: true, confirmRemoveNo: 'Annulla', confirmRemoveYes: 'Elimina', confirmRemoveTitle: 'Elimina colonna', confirmRemoveMessage: 'Proseguendo verrà eliminata la colonna e il suo intero contenuto. L\'operazione è irreversibile. Sei sicuro di voler procedere?'}"
-                            :group="{...column.group, collapsed: false}"
+                            :group="{...column.group}"
                             :index="column.index"
                             :resource-name="resourceName"
                             :resource-id="resourceId"
@@ -60,27 +63,31 @@
                             :is-column="true"
                             :is-draft="false"
                             :compact="true"
-                            @move-up="moveUp(column.group.key, columnIndex)"
-                            @move-down="moveDown(column.group.key, columnIndex)"
+                            :width="column.width"
+                            :color="column.color"
+                            @move-up="moveUp(column.group.key, row.offset + columnIndex)"
+                            @move-down="moveDown(column.group.key, row.offset + columnIndex)"
                             @draft-group="draftGroup(column.group.key)"
-                            @remove="remove(column.group.key, columnIndex)"
+                            @remove="remove(column.group.key, row.offset + columnIndex)"
                         />
                         <form-nova-flexible-content-group
-                            v-for="(group, index) in column.subgroups"
+                            v-for="(subgroup, index) in column.subgroups"
                             :dusk="field.attribute + '-' + (column.index + index + 1)"
-                            :key="group.key"
+                            :key="subgroup.group.key"
                             :field="{...field, confirmRemove: true, confirmRemoveNo: 'Annulla', confirmRemoveYes: 'Elimina', confirmRemoveTitle: 'Elimina elemento', confirmRemoveMessage: 'Proseguendo l\'elemento selezionato verrà eliminato. L\'operazione è irreversibile. Sei sicuro di voler procedere?'}"
-                            :group="group"
+                            :group="subgroup.group"
                             :index="column.index + index + 1"
                             :resource-name="resourceName"
                             :resource-id="resourceId"
                             :resource="resource"
                             :errors="errors"
                             :is-column="false"
-                            @move-up="moveUp(group.key)"
-                            @move-down="moveDown(group.key)"
-                            @draft-group="draftGroup(group.key)"
-                            @remove="remove(group.key)"
+                            :width="column.width"
+                            :color="subgroup.color"
+                            @move-up="moveUp(subgroup.group.key)"
+                            @move-down="moveDown(subgroup.group.key)"
+                            @draft-group="draftGroup(subgroup.group.key)"
+                            @remove="remove(subgroup.group.key)"
                         />
                         <div v-if="column.allowChildrens">
                             <component
@@ -123,6 +130,9 @@ import FullWidthField from './FullWidthField';
 import {FormField, HandlesValidationErrors} from 'laravel-nova';
 import Group from '../group';
 import {eventBus} from '../eventbus';
+import randomColor from 'randomcolor';
+
+const colors = [];
 
 export default {
     mixins: [FormField, HandlesValidationErrors],
@@ -141,15 +151,6 @@ export default {
                 return groups;
             }, []);
         },
-        groupsWithColumns() {
-            let width = 'w-full';
-            const res = this.orderedGroups.map((g, k) => {
-                const newWidth = this.getColumnWidth(g);
-                width = newWidth ? newWidth : width;
-                return {...g, width};
-            });
-            return res;
-        },
         drafts() {
             const res = [];
             this.orderedGroups.every((g, i) => {
@@ -159,6 +160,8 @@ export default {
                     res.push({
                         group: g,
                         index: i,
+                        color: this.getColor(g),
+                        width: '100'
                     });
                     return true;
                 }
@@ -174,6 +177,8 @@ export default {
                             res.push({
                                 group: g,
                                 index: i,
+                                color: this.getColor(g),
+                                width: '100'
                             });
                         } else {
                             hasToCheck = false;
@@ -184,34 +189,66 @@ export default {
             return res;
         },
         columns() {
-            const res = [];
-            let col = null;
-            this.orderedGroups.forEach((g, i) => {
-                if (this.isColumn(g.name)) {
-                    if (col) {
-                        res.push(col);
-                    }
-                    col = {
-                        group: g,
-                        width: this.getColumnWidth(g),
-                        subgroups: [],
-                        index: i,
-                        allowChildrens: true
-                    };
-                    if (this.isSpecialChildless(g.name)) {
-                        res.push({...col, allowChildrens: false});
-                        col = null;
-                    }
-                } else {
-                    if (col) {
-                        col.subgroups.push(g);
-                    }
-                }
-            })
-            if (col) {
+          const res = [];
+          let col = null;
+          this.orderedGroups.forEach((g, i) => {
+            if (this.isColumn(g.name)) {
+              if (col) {
                 res.push(col);
+              }
+              col = {
+                group: g,
+                width: this.getColumnWidth(g),
+                color: this.getColor(g),
+                subgroups: [],
+                index: i,
+                allowChildrens: true
+              };
+              if (this.isSpecialChildless(g.name)) {
+                res.push({...col, allowChildrens: false});
+                col = null;
+              }
+            } else {
+              if (col) {
+                col.subgroups.push({
+                  group: g,
+                  color: this.getColor(g),
+                });
+              }
             }
-            return res;
+          })
+          if (col) {
+            res.push(col);
+          }
+          return res;
+        },
+
+        rows() {
+          const res = [];
+          let row = {
+            offset: 0,
+            columns: []
+          };
+          let width = 0;
+          this.columns.forEach((column, i) => {
+            if(width + parseInt(column.width) > 100) {
+              if(row.columns.length > 0) {
+                res.push(row);
+              }
+              row = {
+                offset: i,
+                columns: [column]
+              };
+              width = parseInt(column.width) ;
+            } else {
+              row.columns.push(column);
+              width += parseInt(column.width) ;
+            }
+          });
+          if(row.columns.length > 0) {
+            res.push(row);
+          }
+          return res;
         }
     },
 
@@ -346,8 +383,17 @@ export default {
             return ['x_banner'].includes(name);
         },
 
+        getColor(group) {
+          if(!colors[group.key]) {
+            colors[group.key] = randomColor({
+              luminosity: 'light',
+            })
+          }
+          return colors[group.key];
+        },
+
         getColumnWidth(group) {
-            if (!this.isColumn(group.name)) {
+            if (!group || !this.isColumn(group.name)) {
                 return false;
             }
             if (group.name === 'x_column') {
@@ -355,17 +401,21 @@ export default {
                 if (!widthField) {
                     return false;
                 }
-                switch (widthField.value) {
-                  case '25': return 'w-1/4';
-                  case '33': return 'w-1/3';
-                  case '50': return 'w-1/2';
-                  case '66': return 'w-2/3';
-                  case '75': return 'w-3/4';
-                  default: return 'w-full';
-                }
+                return widthField.value;
             } else {
-                return 'w-full';
+                return '100';
             }
+        },
+
+        mapWidthToCssClass(width) {
+              switch (width) {
+                case '25': return 'w-1/4';
+                case '33': return 'w-1/3';
+                case '50': return 'w-1/2';
+                case '66': return 'w-2/3';
+                case '75': return 'w-3/4';
+                default: return 'w-full';
+              }
         },
 
         /**

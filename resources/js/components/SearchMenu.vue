@@ -17,10 +17,13 @@
                 <div style="min-width: 100px;">
                     <div class="flexible-search-menu-multiselect">
                         <multiselect
-                            v-model="selectedLayout" :options="layouts"
+                             v-model="selectedLayout" :options="levelLayouts"
                              :custom-label="renderLayoutName"
                              :placeholder="field.button"
+                             :group-select="false"
                              @input="selectLayout"
+                             group-values="fields"
+                             group-label="label"
                              v-bind="attributes"
                              track-by="name"
                         ></multiselect>
@@ -49,6 +52,29 @@
         },
 
         computed: {
+            levelLayouts () {
+              const res = [
+                {
+                  'label': '1° Livello',
+                  'fields': []
+                },
+                {
+                  'label': '2° Livello',
+                  'fields': []
+                }
+              ];
+
+              this.layouts.forEach((f) => {
+                if(['x_column', 'x_banner'].includes(f.name)) {
+                  res[0].fields.push(f);
+                } else {
+                  res[1].fields.push(f);
+                }
+              });
+
+              return res;
+            },
+
             attributes() {
                 return {
                     selectLabel: this.field.menu.data.selectLabel || __('Press enter to select'),
@@ -63,7 +89,7 @@
                 this.addGroup(value);
             },
             renderLayoutName(layout){
-                return layout.title;
+               return layout.title;
             },
             /**
              * Display or hide the layouts choice dropdown if there are multiple layouts
@@ -91,3 +117,9 @@
         }
     }
 </script>
+
+<style>
+.multiselect__content-wrapper {
+  position: static;
+}
+</style>

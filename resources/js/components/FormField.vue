@@ -48,7 +48,7 @@
                 :class="'flex flex-row flex-wrap items-start justify-center p-2 mb-2 rounded-lg ' + (rowIndex % 2 === 0 ? 'bg-60' : 'bg-40')"
                 v-for="(row, rowIndex) in rows"
                 v-if="rows.length > 0">
-                <div :class="mapWidthToCssClass(column.width) + ' full-on-mobile p-1'" v-for="(column, columnIndex) in row.columns">
+                <div :class="mapWidthToCssClass(column.width) + ' ' + mapAlignToCssClass(column.align) + ' full-on-mobile p-1'" v-for="(column, columnIndex) in row.columns">
                     <div class="w-full bg-white shadow rounded-lg border border-50 p-2">
                         <form-nova-flexible-content-group
                             :dusk="field.attribute + '-' + column.index"
@@ -199,6 +199,7 @@ export default {
               col = {
                 group: g,
                 width: this.getColumnWidth(g),
+                align: this.getColumnAlign(g),
                 color: this.getColor(g),
                 subgroups: [],
                 index: i,
@@ -407,6 +408,21 @@ export default {
             }
         },
 
+        getColumnAlign(group) {
+            if (!group || !this.isColumn(group.name)) {
+                return false;
+            }
+            if (group.name === 'x_column') {
+                const alignField = group.fields.find(f => f.sortableUriKey === 'x_y_align');
+                if (!alignField) {
+                    return false;
+                }
+                return alignField.value;
+            } else {
+                return 'start';
+            }
+        },
+
         mapWidthToCssClass(width) {
               switch (width) {
                 case '25': return 'w-1/4';
@@ -415,6 +431,14 @@ export default {
                 case '66': return 'w-2/3';
                 case '75': return 'w-3/4';
                 default: return 'w-full';
+              }
+        },
+
+        mapAlignToCssClass(align) {
+              switch (align) {
+                case 'end': return 'self-end';
+                case 'center': return 'self-center';
+                default: return 'self-start';
               }
         },
 

@@ -452,7 +452,7 @@ export default {
 
             const amount = columnIndex !== undefined ? this.columns[columnIndex].subgroups.length + 1 : 1;
             let shift = columnIndex !== undefined ? this.columns[columnIndex - 1].subgroups.length + 1 : 1;
-            if(columnIndex === undefined) {
+            if(columnIndex !== undefined) {
                 let found = false;
                 for(let i = index-2; i >= 0; i--) {
                     if(this.isSpecialChildless(this.groups[this.order[i]].name)) {

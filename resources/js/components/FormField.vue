@@ -365,7 +365,7 @@ export default {
 
             collapsed = collapsed || false;
 
-            let fields = attributes || JSON.parse(JSON.stringify(layout.fields)),
+            let fields = JSON.parse(JSON.stringify(attributes || layout.fields)),
                 group = new Group(layout.name, layout.title, fields, this.field, key, collapsed);
 
             this.groups[group.key] = group;

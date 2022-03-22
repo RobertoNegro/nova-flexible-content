@@ -1,7 +1,7 @@
 <template>
     <field-wrapper>
-        <div class="py-6 px-8 w-full">
-            <div class="mb-6" v-if="fieldLabel">
+        <div class="pt-2 pb-2 px-2 w-full">
+            <div class="ml-6 mb-4" v-if="fieldLabel">
                 <form-label :for="field.attribute" :class="{
                       'mb-2': field.helpText && showHelpText
                   }">

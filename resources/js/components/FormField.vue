@@ -6,50 +6,44 @@
         :errors="errors"
         full-width-content>
         <template slot="field">
-            <div
-                class="flex flex-row flex-wrap items-start justify-center bg-40 mb-2 p-2 rounded-lg"
-                v-if="drafts.length > 0">
-                <div class="w-full">
-                    <div v-if="columns.length > 0" class="w-full flex flex-row justify-between items-center">
-                        <div class="text-90 text-lg font-bold">{{ __('Bozze') }}:</div>
-                        <div class="text-80 text-sm font-light">
-                            {{ __('Sposta i componenti dentro ad una colonna per inserirli nella pagina') }}
-                        </div>
-                    </div>
-                    <div class="w-full p-1" v-for="(draft, index) in drafts">
-                        <div :class="columns.length > 0 ? 'border-4 border-dotted' : 'border'"
-                             class="w-full bg-white shadow rounded-lg border-50 p-2">
-                            <form-nova-flexible-content-group
-                                :dusk="field.attribute + '-' + draft.index"
-                                :key="draft.group.key"
-                                :field="{...field, confirmRemove: true, confirmRemoveNo: 'Annulla', confirmRemoveYes: 'Elimina', confirmRemoveTitle: 'Elimina colonna', confirmRemoveMessage: 'Proseguendo verrà eliminata la colonna e il suo intero contenuto. L\'operazione è irreversibile. Sei sicuro di voler procedere?'}"
-                                :group="{...draft.group, collapsed: false}"
-                                :index="draft.index"
-                                :resource-name="resourceName"
-                                :resource-id="resourceId"
-                                :resource="resource"
-                                :errors="errors"
-                                :is-column="true"
-                                :is-draft="true"
-                                :compact="false"
-                                :width="draft.width"
-                                :color="draft.color"
-                                @move-up="moveUp(draft.group.key)"
-                                @move-down="moveDown(draft.group.key)"
-                                @draft-group="draftGroup(draft.group.key)"
-                                @remove="remove(draft.group.key)"
-                            />
-                        </div>
-                    </div>
+          <div
+              class="flex flex-row flex-wrap items-start justify-center bg-40 mb-2 rounded-lg"
+              style="padding-left: 0.125rem; padding-top: 0.125rem; padding-right: 0.125rem"
+              v-if="drafts.length > 0">
+              <div style="padding-left: 0.125rem; padding-top: 0.125rem; padding-right: 0.125rem"
+                   class="mb-1 full-on-mobile" :class="mapWidthToCssClass(draft.width)"
+                   v-for="(draft, index) in drafts">
+                <div class="w-full bg-white shadow rounded-lg border border-50">
+                  <form-nova-flexible-content-group
+                      :dusk="field.attribute + '-' + draft.index"
+                      :key="draft.group.key"
+                      :field="{...field, confirmRemove: true, confirmRemoveNo: 'Annulla', confirmRemoveYes: 'Elimina', confirmRemoveTitle: 'Elimina colonna', confirmRemoveMessage: 'Proseguendo verrà eliminata la colonna e il suo intero contenuto. L\'operazione è irreversibile. Sei sicuro di voler procedere?'}"
+                      :group="{...draft.group, collapsed: false}"
+                      :index="draft.index"
+                      :resource-name="resourceName"
+                      :resource-id="resourceId"
+                      :resource="resource"
+                      :errors="errors"
+                      :is-column="true"
+                      :compact="false"
+                      :width="draft.width"
+                      :color="draft.color"
+                      @move-up="moveUp(draft.group.key)"
+                      @move-down="moveDown(draft.group.key)"
+                      @draft-group="draftGroup(draft.group.key)"
+                      @remove="remove(draft.group.key)"
+                  />
                 </div>
-            </div>
+              </div>
+          </div>
 
-            <div
-                :class="'flex flex-row flex-wrap items-start justify-center p-2 mb-2 rounded-lg ' + (rowIndex % 2 === 0 ? 'bg-60' : 'bg-40')"
+          <div
+                :class="'flex flex-row flex-wrap items-start justify-center rounded-lg mb-2 ' + (rowIndex % 2 === 0 ? 'bg-60' : 'bg-40')"
+                style="padding: 0.125rem"
                 v-for="(row, rowIndex) in rows"
                 v-if="rows.length > 0">
-                <div :class="mapWidthToCssClass(column.width) + ' ' + mapAlignToCssClass(column.align) + ' full-on-mobile p-1'" v-for="(column, columnIndex) in row.columns">
-                    <div class="w-full bg-white shadow rounded-lg border border-50 p-2">
+                <div style="padding: 0.125rem" class="full-on-mobile" :class="mapWidthToCssClass(column.width) + ' ' + mapAlignToCssClass(column.align)" v-for="(column, columnIndex) in row.columns">
+                    <div class="w-full bg-white shadow rounded-lg">
                         <form-nova-flexible-content-group
                             :dusk="field.attribute + '-' + column.index"
                             :key="column.group.key"
@@ -61,13 +55,11 @@
                             :resource="resource"
                             :errors="errors"
                             :is-column="true"
-                            :is-draft="false"
                             :compact="true"
                             :width="column.width"
                             :color="column.color"
                             @move-up="moveUp(column.group.key, row.offset + columnIndex)"
                             @move-down="moveDown(column.group.key, row.offset + columnIndex)"
-                            @draft-group="draftGroup(column.group.key)"
                             @remove="remove(column.group.key, row.offset + columnIndex)"
                         />
                         <form-nova-flexible-content-group
@@ -86,10 +78,9 @@
                             :color="subgroup.color"
                             @move-up="moveUp(subgroup.group.key)"
                             @move-down="moveDown(subgroup.group.key)"
-                            @draft-group="draftGroup(subgroup.group.key)"
                             @remove="remove(subgroup.group.key)"
                         />
-                        <div v-if="column.allowChildrens">
+                        <div class="px-1 pb-1" v-if="column.allowChildrens">
                             <component
                                 :layouts="layouts"
                                 :is="field.menu.component"
@@ -105,21 +96,21 @@
                     </div>
 
                 </div>
-
             </div>
 
-            <component
-                :layouts="layouts"
-                :is="field.menu.component"
-                :field="field"
-                :limit-counter="limitCounter"
-                :errors="errors"
-                :resource-name="resourceName"
-                :resource-id="resourceId"
-                :resource="resource"
-                :index="order.length"
-            />
-
+            <div>
+                <component
+                    :layouts="layouts"
+                    :is="field.menu.component"
+                    :field="field"
+                    :limit-counter="limitCounter"
+                    :errors="errors"
+                    :resource-name="resourceName"
+                    :resource-id="resourceId"
+                    :resource="resource"
+                    :index="order.length"
+                />
+            </div>
         </template>
     </component>
 </template>
@@ -152,41 +143,52 @@ export default {
             }, []);
         },
         drafts() {
-            const res = [];
-            this.orderedGroups.every((g, i) => {
-                if (this.isColumn(g.name)) {
-                    return false;
-                } else {
-                    res.push({
-                        group: g,
-                        index: i,
-                        color: this.getColor(g),
-                        width: '100'
-                    });
-                    return true;
-                }
-            });
+          const res = [];
+          this.orderedGroups.every((g, i) => {
+            if (this.isColumn(g.name)) {
+              return false;
+            } else {
+              let width = '100';
+              if(this.isSizeable(g.name)) {
+                width = this.getColumnWidth(g);
+              }
+              res.push({
+                group: g,
+                index: i,
+                color: this.getColor(g),
+                width: width
+              });
+              return true;
+            }
+          });
 
-            let hasToCheck = false;
-            this.orderedGroups.forEach((g, i) => {
-                if (this.isSpecialChildless(g.name)) {
-                    hasToCheck = true;
+          let hasToCheck = false;
+          this.orderedGroups.forEach((g, i) => {
+            if (this.isSpecialChildless(g.name)) {
+              hasToCheck = true;
+            } else {
+              if (hasToCheck) {
+                if (!this.isColumn(g.name)) {
+                  let width = '100';
+                  if(this.isSizeable(g.name)) {
+                    width = this.getColumnWidth(g);
+                  }
+                  res.push({
+                    group: g,
+                    index: i,
+                    color: this.getColor(g),
+                    width: width
+                  });
                 } else {
-                    if (hasToCheck) {
-                        if (!this.isColumn(g.name)) {
-                            res.push({
-                                group: g,
-                                index: i,
-                                color: this.getColor(g),
-                                width: '100'
-                            });
-                        } else {
-                            hasToCheck = false;
-                        }
-                    }
+                  hasToCheck = false;
                 }
-            });
-            return res;
+              }
+            }
+          });
+
+          console.log(res);
+
+          return res;
         },
         columns() {
           const res = [];
@@ -380,6 +382,10 @@ export default {
             return ['x_column'].includes(name) || this.isSpecialChildless(name);
         },
 
+        isSizeable(name) {
+            return ['x_column', 'x_menu_column', 'x_menu_group_column'].includes(name);
+        },
+
         isSpecialChildless(name) {
             return ['x_banner'].includes(name);
         },
@@ -394,14 +400,15 @@ export default {
         },
 
         getColumnWidth(group) {
-            if (!group || !this.isColumn(group.name)) {
+            if (!group || !this.isSizeable(group.name)) {
                 return false;
             }
-            if (group.name === 'x_column') {
+            if (this.isSizeable(group.name)) {
                 const widthField = group.fields.find(f => f.sortableUriKey === 'x_width');
                 if (!widthField) {
                     return false;
                 }
+                console.log(group.name, widthField.value);
                 return widthField.value;
             } else {
                 return '100';
@@ -514,14 +521,6 @@ export default {
             if (this.limitCounter >= 0) {
                 this.limitCounter += amount;
             }
-        },
-
-        /**
-         * Move group to drafts
-         */
-        draftGroup(key) {
-          let index = this.order.indexOf(key);
-          this.order.splice(0, 0, ...this.order.splice(index, 1));
         },
     },
     mounted() {

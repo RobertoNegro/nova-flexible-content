@@ -383,7 +383,7 @@ export default {
         },
 
         isSizeable(name) {
-            return ['x_column', 'x_menu_column', 'x_menu_group_column'].includes(name);
+            return ['x_column', 'x_menu_column', 'x_menu_group_column', 'x_menu_content_column'].includes(name);
         },
 
         isSpecialChildless(name) {

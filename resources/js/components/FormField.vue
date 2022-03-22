@@ -18,7 +18,7 @@
                       :dusk="field.attribute + '-' + draft.index"
                       :key="draft.group.key"
                       :field="{...field, confirmRemove: true, confirmRemoveNo: 'Annulla', confirmRemoveYes: 'Elimina', confirmRemoveTitle: 'Elimina colonna', confirmRemoveMessage: 'Proseguendo verrà eliminata la colonna e il suo intero contenuto. L\'operazione è irreversibile. Sei sicuro di voler procedere?'}"
-                      :group="{...draft.group, collapsed: false}"
+                      :group="{...draft.group}"
                       :index="draft.index"
                       :resource-name="resourceName"
                       :resource-id="resourceId"
